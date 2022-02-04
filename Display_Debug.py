@@ -56,10 +56,13 @@ window.configure(background=hexColor) #Set window background color in Hex
 ## Colors
 labelColorText = "#bad5f7" #Text label color hardcoded
 labelColorValue = "#9daec4" #Value label color hardcoded
-buttonBackgroundP = "#c27272" #Passive background button color
+buttonBackgroundP =  "#c27272" #Passive background button color
 buttonBackgroundA = "#c72020" #Active background button color
 battBar = "#049138" #Battery bar fill color
 battBack = "#e4f0e8" #battery bar background color
+latchFull = "#89f594" # Latch is Full
+latchDoor = "#f7d26d" # Latch is door
+latchOpen =  "#f28d8d" # Latch is open
 
 #Battery label
 Batt = tk.Label(window, text = "Battery Voltage", font=('Lekton 14'), 
@@ -129,15 +132,42 @@ latch = tk.Button(window, text = "Fire Latch Command", font=('Lekton 20'),border
 command = latchCommand,
 relief="solid", bg=buttonBackgroundP, activebackground=buttonBackgroundA)
 latch.pack()
-latch.place(relwidth=(1/2), relheight=1/6, relx = 0, rely = 5/6)
+latch.place(relwidth=(1), relheight=1/6, relx = 0, rely = 5/6)
 
-## Image or Map
-GUIimg = tk.PhotoImage(file="Images\GUIPHOTO.PPM")
-imagePlace = tk.Label(window, borderwidth = 3,
-relief="solid", image=GUIimg)
-imagePlace.pack()
-imagePlace.place(bordermode = "outside", relwidth=1/2, relheight=4/6, 
-relx = 1/2, rely = 2/6) #Position image/map
+# ## Image or Map
+# GUIimg = tk.PhotoImage(file="Images\GUIPHOTO.PPM")
+# imagePlace = tk.Label(window, borderwidth = 3,
+# relief="solid", image=GUIimg)
+# imagePlace.pack()
+# imagePlace.place(bordermode = "outside", relwidth=1/2, relheight=4/6, 
+# relx = 1/2, rely = 2/6) #Position image/map
+
+## Latches
+
+#Latch 1
+Latch1 = tk.Label(window, 
+font=('Lekton 20'),borderwidth = 3, relief="solid", bg=latchOpen)
+Latch1.pack()
+Latch1.place(relwidth=(1/4), relheight=1/4, relx = 1/2, rely = 2/6)
+
+#Latch 2
+Latch2 = tk.Label(window, 
+font=('Lekton 20'),borderwidth = 3, relief="solid", bg=latchOpen)
+Latch2.pack()
+Latch2.place(relwidth=(1/4), relheight=1/4, relx = 3/4, rely = 2/6)
+
+#Latch 3
+Latch3 = tk.Label(window, 
+font=('Lekton 20'),borderwidth = 3, relief="solid", bg=latchOpen)
+Latch3.pack()
+Latch3.place(relwidth=(1/4), relheight=1/4, relx = 1/2, rely = 7/12)
+
+#Latch 4
+Latch4 = tk.Label(window, 
+font=('Lekton 20'),borderwidth = 3, relief="solid", bg=latchOpen)
+Latch4.pack()
+Latch4.place(relwidth=(1/4), relheight=1/4, relx = 3/4, rely = 7/12)
+
 
 def updateData():
     data = getData()
@@ -148,6 +178,42 @@ def updateData():
     CargoStat['text'] = data['Cargo']
     LatchStat['text'] = data['Latch']
     Timestamp['text'] = data['TimeStamp']
+
+    ## Latches
+
+    Latch1['text'] = "Latch 1: " + data['Latch 1']
+    Latch2['text'] = "Latch 2: " + data['Latch 2']
+    Latch3['text'] = "Latch 3: " + data['Latch 3']
+    Latch4['text'] = "Latch 4: " + data['Latch 4']
+
+    if data['Latch 1'] == "Full":
+        Latch1['bg'] = latchFull
+    elif data['Latch 1'] == "Door":
+        Latch1['bg'] = latchDoor
+    else:
+        Latch1['bg'] = latchOpen
+
+    if data['Latch 2'] == "Full":
+        Latch2['bg'] = latchFull
+    elif data['Latch 2'] == "Door":
+        Latch2['bg'] = latchDoor
+    else:
+        Latch2['bg'] = latchOpen
+
+    if data['Latch 3'] == "Full":
+        Latch3['bg'] = latchFull
+    elif data['Latch 3'] == "Door":
+        Latch3['bg'] = latchDoor
+    else:
+        Latch3['bg'] = latchOpen
+
+    if data['Latch 4'] == "Full":
+        Latch4['bg'] = latchFull
+    elif data['Latch 4'] == "Door":
+        Latch4['bg'] = latchDoor
+    else:
+        Latch4['bg'] = latchOpen
+
     ## Battery Voltage Bar 
     bar = tk.Canvas(window, borderwidth = 3,
     relief="solid", bg=battBack)
