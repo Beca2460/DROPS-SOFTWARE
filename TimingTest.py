@@ -28,6 +28,7 @@ import random
 import numpy as np
 import pandas as pd
 import matplotlib as plt
+import timeit as timeit
 plt.use("TkAgg")
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -43,10 +44,10 @@ from CollectData import writeTime
 # Arguments: None
 # Returns: None 
 def latchCommand():
-    # Send Data Asynchronously
+
     homeXbee.send_data_async(remoteXbee, "L") #String L for latch
-    # bytearray(b'xxxxxxxxxxxxxxxxxxxx test packet xxxxxxx')
     print("Latch Command Sent \n")
+ 
 
 ######### UNlatchCommand #############
 # Description: function to send unlatch command to remote XBee
@@ -55,8 +56,8 @@ def latchCommand():
 def unlatchCommand():
     # Send Data Asynchronously
     homeXbee.send_data_async(remoteXbee, "U") #String U for unlatch
-    # bytearray(b'xxxxxxxxxxxxxxxxxxxx test packet xxxxxxx')
-    print("Unlatch Command Sent \n")
+    now = datetime.datetime.now()
+
 
 ########### getData ###################
 # Description: function to take data recieved from radio and turn it
@@ -68,14 +69,13 @@ def getData(dataIn=None):
     ## Get current date and time for testing
     now = datetime.datetime.now()
     current_time = now.strftime("%H:%M:%S")
-    #round(random.uniform(35, 49.5),2)
+
     if dataIn is None:
         cleanData = {'Voltage': 45, 'Power': "yes", 'Cargo': "full", 'Latch': "1/4", \
             'Latitude': "40.0150° N", 'Longitude': "105.2705° W", 'Latch 1': "Full", 'Latch 2': "Open",
             'Latch 3': "Open", 'Latch 4': "Door", 'TimeStamp': current_time}
     else: 
         # Will put something here when Josh can figure out his arduino code
-        time = dataIn.timestamp
         p = dataIn.data.decode()
         print(p)
         round(random.uniform(35, 49.5),2)
@@ -93,25 +93,19 @@ def updateData():
     try:
         ## Recieve Data from XBee ##
         readData = homeXbee.read_data_from(remoteXbee, 0)
-        # readData = homeXbee.wait_read_frame(remoteXbee)
         remote = readData.remote_device
-        dataGo = readData.data
+        dataIn = readData.data
         is_broadcast = readData.is_broadcast
         timestamp = readData.timestamp
-        #writeTime("Latch status recieved at : ", time)
         print(readData.data)
         data = getData(readData)
     except TimeoutException: 
         #print("No data in interval \n") 
         data = getData() 
-      
 
-    BattVolt['text'] = str(data['Voltage'])
-    PowStat['text'] = data['Power']
-    CargoStat['text'] = data['Cargo']
     LatchStat['text'] = data['Latch']
     Timestamp['text'] = data['TimeStamp']
-
+    
     ## Latches
 
     Latch1['text'] = "Latch 1: " + data['Latch 1']
@@ -146,17 +140,6 @@ def updateData():
         Latch4['bg'] = latchDoor
     else:
         Latch4['bg'] = latchOpen
-
-    ## Battery Voltage Bar 
-    # bar = tk.Canvas(window, borderwidth = 3,
-    # relief="solid", bg=battBack)
-    # bar.pack()
-    # bar.place(bordermode = "outside", relwidth=1/2, relheight=2/6, 
-    # relx = 1/2, rely = 0) #Position voltage bar
-    # x = bar.winfo_reqwidth()*(data['Voltage']/battFull)
-    # y = bar.winfo_reqheight()
-    # bar.create_rectangle(0, 0, x, y,
-    #     fill=battBar)
 
     window.after(100, updateData)
 
@@ -241,67 +224,18 @@ if __name__ == "__main__":
 
     ################ CREATE WIDGETS ###################
     
-    #Battery label
-    Batt = tk.Label(window, text = "Battery Voltage", font=('Lekton 14'), 
-    borderwidth = 3, relief="solid", bg=labelColorText) #Create Voltage label
-    Batt.pack()
-    Batt.place(bordermode = "outside", relwidth=1/3, relheight=1/6, relx = 0, rely = 0) #Position voltage label
-
-    #Power label
-    Pow = tk.Label(window, text = "Power Passthrough", font=('Lekton 14'), 
-    borderwidth = 3, relief="solid", bg=labelColorText)
-    Pow.pack()
-    Pow.place(bordermode = "outside", relwidth=1/3, relheight=1/6, relx = 0, rely = 1/6)
-
-    #Cargo label
-    Cargo = tk.Label(window, text = "Cargo Bay", font=('Lekton 14'), 
-    borderwidth = 3, relief="solid", bg=labelColorText)
-    Cargo.pack()
-    Cargo.place(bordermode = "outside", relwidth=1/3, relheight=1/6, relx = 0, rely = 2/6)
-
-    #Latch label
-    Latch = tk.Label(window, text = "Latch Status", font=('Lekton 14'),
-    borderwidth = 3, relief="solid", bg=labelColorText)
-    Latch.pack()
-    Latch.place(bordermode = "outside", relwidth=1/3, relheight=1/6, relx = 0, rely = 3/6)
-
-    #Time label
-    Time = tk.Label(window, text = "Timestamp", font=('Lekton 14'), 
-    borderwidth = 3, relief="solid", bg=labelColorText)
-    Time.pack()
-    Time.place(bordermode = "outside", relwidth=1/3, relheight=1/6, relx = 0, rely = 4/6)
-
-    ## Display input values
-
-    #Battery Voltage
-    BattVolt = tk.Label(window, 
-    font=("STIX Math", 20),borderwidth = 3, relief="solid", bg=labelColorValue)
-    BattVolt.pack()
-    BattVolt.place(relwidth=(1/2-1/3), relheight=1/6, relx = 1/3, rely = 0)
-
-    #Power status
-    PowStat = tk.Label(window, 
-    font=("STIX Math", 20),borderwidth = 3, relief="solid", bg=labelColorValue)
-    PowStat.pack()
-    PowStat.place(relwidth=(1/2-1/3), relheight=1/6, relx = 1/3, rely = 1/6)
-
-    #Cargo Status
-    CargoStat = tk.Label(window, 
-    font=("STIX Math", 20),borderwidth = 3, relief="solid", bg=labelColorValue)
-    CargoStat.pack()
-    CargoStat.place(relwidth=(1/2-1/3), relheight=1/6, relx = 1/3, rely = 2/6)
 
     #Latch Status
     LatchStat = tk.Label(window, 
-    font=("STIX Math", 20),borderwidth = 3, relief="solid", bg=labelColorValue)
+    font=("Comic Sans MS", 60),borderwidth = 3, relief="solid", bg=labelColorValue)
     LatchStat.pack()
-    LatchStat.place(relwidth=(1/2-1/3), relheight=1/6, relx = 1/3, rely = 3/6)
+    LatchStat.place(relwidth=(1/2), relheight=3/6, relx = 0, rely = 0)
 
     #Timestamp
     Timestamp = tk.Label(window, 
-    font=("STIX Math", 20),borderwidth = 3, relief="solid", bg=labelColorValue)
+    font=("Comic Sans MS", 20),borderwidth = 3, relief="solid", bg='#000', fg='#ff0')
     Timestamp.pack()
-    Timestamp.place(relwidth=(1/2-1/3), relheight=1/6, relx = 1/3, rely = 4/6)
+    Timestamp.place(relwidth=(1/2), relheight=1/6, relx = 0, rely = 3/6)
 
 
     ## Button for latch
@@ -309,19 +243,14 @@ if __name__ == "__main__":
     command = latchCommand,
     relief="solid", bg=buttonBackgroundP, activebackground=buttonBackgroundA)
     latch.pack()
-    latch.place(relwidth=(1/2), relheight=1/6, relx = 0, rely = 5/6)
+    latch.place(relwidth=(1/2), relheight=2/6, relx = 0, rely = 4/6)
 
      ## Button for unlatch
     latch = tk.Button(window, text = "UNLATCH", font=("STIX Math", 20),borderwidth = 3,
     command = unlatchCommand,
     relief="solid", bg=unlatchButtonP, activebackground=unlatchButtonA)
     latch.pack()
-    latch.place(relwidth=(1/2), relheight=1/6, relx = 1/2, rely = 5/6)
-
-    logo = tk.Label(window, text = "DROPS :P", font=("Comic Sans MS", 50, "bold"),borderwidth = 3,
-     relief="solid", bg='#000', fg='#ff0')
-    logo.pack()
-    logo.place(relwidth=(1/2), relheight=1/3, relx = 1/2, rely = 0)
+    latch.place(relwidth=(1/2), relheight=2/6, relx = 1/2, rely = 4/6)
 
     ## Latches
 
@@ -329,25 +258,25 @@ if __name__ == "__main__":
     Latch1 = tk.Label(window, 
     font=("STIX Math", 20),borderwidth = 3, relief="solid", bg=latchOpen)
     Latch1.pack()
-    Latch1.place(relwidth=(1/4), relheight=1/4, relx = 1/2, rely = 2/6)
+    Latch1.place(relwidth=(1/4), relheight=1/3, relx = 1/2, rely = 0/6)
 
     #Latch 2
     Latch2 = tk.Label(window, 
     font=("STIX Math", 20),borderwidth = 3, relief="solid", bg=latchOpen)
     Latch2.pack()
-    Latch2.place(relwidth=(1/4), relheight=1/4, relx = 3/4, rely = 2/6)
+    Latch2.place(relwidth=(1/4), relheight=1/3, relx = 3/4, rely = 0/6)
 
     #Latch 3
     Latch3 = tk.Label(window, 
     font=("STIX Math", 20),borderwidth = 3, relief="solid", bg=latchOpen)
     Latch3.pack()
-    Latch3.place(relwidth=(1/4), relheight=1/4, relx = 1/2, rely = 7/12)
+    Latch3.place(relwidth=(1/4), relheight=1/3, relx = 1/2, rely = 2/6)
 
     #Latch 4
     Latch4 = tk.Label(window, 
     font=("STIX Math", 20),borderwidth = 3, relief="solid", bg=latchOpen)
     Latch4.pack()
-    Latch4.place(relwidth=(1/4), relheight=1/4, relx = 3/4, rely = 7/12)
+    Latch4.place(relwidth=(1/4), relheight=1/3, relx = 3/4, rely = 2/6)
 
 
 
@@ -356,3 +285,4 @@ if __name__ == "__main__":
     window.mainloop()
     homeXbee.close() # Close XBee connection
     print("Closed Connection \n")
+
