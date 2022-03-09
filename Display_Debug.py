@@ -14,6 +14,7 @@
 # V1.1 - 10/30/2021 - Display.py created, very basic functionality
 # V2.1 - 1/22/2022 - This is what I am running now instead of GUI.py
 #V2.2 - 2/4/2022 - Integrated ConnectXbee into display
+#V3.1 - 2/21/2022 - Fixed boot, 4 latches, two way serial
 
 ###################################################################
 
@@ -50,7 +51,7 @@ def latchCommand():
     # bytearray(b'xxxxxxxxxxxxxxxxxxxx test packet xxxxxxx')
     print("Latch Command Sent \n")
     #timer = now.strftime("%H:%M:%S:%f")
-    writeTime("Latch Command sent at : ", str(now))
+    writeTime("Tx'L' : ", str(now))
 
 
 ############## UNlatchCommand ################
@@ -64,7 +65,7 @@ def unlatchCommand():
     # bytearray(b'xxxxxxxxxxxxxxxxxxxx test packet xxxxxxx')
     print("Unlatch Command Sent \n")
     #timer = now.strftime("%H:%M:%S:%f")
-    writeTime("UnLatch Command sent at : ", str(now))
+    writeTime("Tx'U' : ", str(now))
 
 ################ getData ###################
 # Description: function to take data recieved from radio and turn it
@@ -84,11 +85,67 @@ def getData(dataIn=None):
     else: 
         # Will put something here when Josh can figure out his arduino code
         L = dataIn.data.decode()
-        print(L)
+        decoded = decodeData(L)
         cleanData = {'Voltage': 45, 'Power': 'yes', 'Cargo': "full", 'Latch': L, \
-            'Latitude': "40.0150° N", 'Longitude': "105.2705° W", 'Latch 1': L[0], 'Latch 2': L[1],
-            'Latch 3': L[2], 'Latch 4': L[3], 'TimeStamp': current_time}
+            'Latitude': "40.0150° N", 'Longitude': "105.2705° W", 'Latch 1': decoded[0], 'Latch 2': decoded[1],
+            'Latch 3': decoded[2], 'Latch 4': decoded[3], 'TimeStamp': current_time}
     return cleanData
+
+############### decodeData ################
+# Description: decodes Latch data recieved from Xbee
+#              Latches: "L" : Locked
+#                       "U" : Unlocked
+#                       "E" : Lock Error
+#                       "W" : Unlock Error
+# Arguments: None
+# Returns: None
+def decodeData(data):
+    decode = [[] for i in range(4)]
+    if data[0] == "L":
+        decode[0] = "L"
+    elif data[0] == "U":
+        decode[0] = "U"
+    elif data[0] == "E":
+        decode[0] = "L Err"
+    elif data[0] == "W":
+        decode[0] = "U Err"
+    else:
+        decode[0] = "Sys Err"
+
+    if data[1] == "L":
+        decode[1] = "L"
+    elif data[1] == "U":
+        decode[1] = "U"
+    elif data[1] == "E":
+        decode[1] = "L Err"
+    elif data[1] == "W":
+        decode[1] = "U Err"
+    else:
+        decode[1] = "Sys Err"
+    
+    if data[2] == "L":
+        decode[2] = "L"
+    elif data[2] == "U":
+        decode[2] = "U"
+    elif data[2] == "E":
+        decode[2] = "L Err"
+    elif data[2] == "W":
+        decode[2] = "U Err"
+    else:
+        decode[2] = "Sys Err"
+    
+    if data[3] == "L":
+        decode[3] = "L"
+    elif data[3] == "U":
+        decode[3] = "U"
+    elif data[3] == "E":
+        decode[3] = "L Err"
+    elif data[3] == "W":
+        decode[3] = "U Err"
+    else:
+        decode[3] = "Sys Err"
+
+    return decode
 
 ############### updataData ################
 # Description: function to read in data from radio then clean the data
@@ -104,10 +161,10 @@ def updateData():
         dataIn = readData.data
         is_broadcast = readData.is_broadcast
         timestamp = readData.timestamp
-        print(timestamp)
+        #print(timestamp)
         if(timestamp != None):
-            writeTime("Latch status recieved at : ", str(timestamp))
-        print(readData.data)
+            writeTime("Rx : ", str(timestamp))
+        #print(readData.data+"\n")
         data = getData(readData)
       
         Timestamp['text'] = data['TimeStamp']
@@ -170,6 +227,27 @@ def updateData():
     #     fill=battBar)
 
     window.after(100, updateData)
+
+############### startData ###############
+# Description: function to fill GUI with blank data upon startup
+# Arguments: None
+# Returns: None
+def startData():
+        Timestamp['text'] = "..."  
+        BattVolt['text'] = "..."
+        PowStat['text'] = "..."
+        CargoStat['text'] = "..."
+        LatchStat['text'] = "..."
+
+        ## Latches
+        Latch1['text'] = "..."
+        Latch2['text'] = "..."
+        Latch3['text'] = "..."
+        Latch4['text'] = "..."
+        Latch1['bg'] = latchDoor
+        Latch2['bg'] = latchDoor
+        Latch3['bg'] = latchDoor
+        Latch4['bg'] = latchDoor
 
 
 ############### windowParameters ###############
@@ -363,6 +441,7 @@ if __name__ == "__main__":
 
 
     ## Main loop to keep the window open
+    startData()
     updateData() #run update data once to populate GUI
     window.mainloop()
     homeXbee.close() # Close XBee connection
